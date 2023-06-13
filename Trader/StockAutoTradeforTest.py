@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # 한국투자증권 Open API key, 디스코드 웹훅 URL 설정 파일
-with open('/mnt/FE0A5E240A5DDA6B/workspace/Quant_Portfolio/Trader/config.yaml', encoding='UTF-8') as f:
+with open('/mnt/FE0A5E240A5DDA6B/workspace/Quant_Portfolio/Trader/configfortest.yaml', encoding='UTF-8') as f:
     _cfg = yaml.load(f, Loader=yaml.FullLoader)
 
 # 서비스 연결을 위해 홈페이지에서 발급 받은 두 가지 암호키(App Key, App Secret)를 활용하여 보안 인증키(token, refresh token)를 발급 받을 수 있음
@@ -100,7 +100,7 @@ def get_stock_balance():
         "authorization":f"Bearer {ACCESS_TOKEN}",
         "appKey":APP_KEY,
         "appSecret":APP_SECRET,
-        "tr_id":"TTTC8434R", # 실전투자 주식 잔고 조회 거래 ID. VTTC8434R: 모의투자
+        "tr_id":"VTTC8434R", # 주식 잔고 조회 거래 ID. 실전 - TTTC8434R / 모의 - VTTC8434R
         "custtype":"P", # 고객 타입. 개인. B: 법인
     }
     params = {
@@ -143,7 +143,7 @@ def get_balance():
         "authorization":f"Bearer {ACCESS_TOKEN}",
         "appKey":APP_KEY,
         "appSecret":APP_SECRET,
-        "tr_id":"TTTC8908R",
+        "tr_id":"VTTC8908R", # 매수 가능 조회 ID. 실전 - TTTC8908R / 모의 - VTTC8908R
         "custtype":"P",
     }
     params = {
@@ -204,7 +204,7 @@ def buy(code="005930", qty="1"):
         "authorization":f"Bearer {ACCESS_TOKEN}",
         "appKey":APP_KEY,
         "appSecret":APP_SECRET,
-        "tr_id":"TTTC0802U", # 주식 현금 매수 주문
+        "tr_id":"VTTC0802U", # 주식 현금 매수 주문 ID. 실전 - TTTC0802U / 모의 - VTTC0802U
         "custtype":"P",
         "hashkey" : hashkey(data) # 요청 암호화
     }
@@ -215,23 +215,6 @@ def buy(code="005930", qty="1"):
     else:
         send_message(f"[매수 실패]{str(res.json())}")
 
-        # try: # Ver. 5
-
-            # send_message(type(str(res.json())))
-
-            # symbol_list.remove(sym) # added for an improvement on 10/19. Ver. 1
-            # symbol_list = symbol_list
-
-        # del sym # added for an improvement on 11/2. Ver. 2
-
-        # if {str(res.json())} == {'rt_cd': '7', 'msg_cd': 'APBK1680', 'msg1': '해당종목은 교육이수가 등록/승인된 계좌만 매수주문가능합니다'}: # Ver. 3
-        #     symbol_list.remove(sym)
-
-        # if 'APBK1680' in str(res.json()): # Ver. 4
-        #     symbol_list.remove(sym)
-        
-        # except:
-        #     return False
         return False
 
 def sell(code="005930", qty="1"):
@@ -247,11 +230,11 @@ def sell(code="005930", qty="1"):
         "ORD_QTY": qty, # 주문 수량
         "ORD_UNPR": "0", # 주문 단가
     }
-    headers = {"Content-Type":"application/json", 
+    headers = {"Content-Type":"application/json",
         "authorization":f"Bearer {ACCESS_TOKEN}",
         "appKey":APP_KEY,
         "appSecret":APP_SECRET,
-        "tr_id":"TTTC0801U", # 주식 현금 매도 주문
+        "tr_id":"VTTC0801U", # 주식 현금 매도 주문 ID. 실전 - TTTC0801U / 모의 - VTTC0801U
         "custtype":"P",
         "hashkey" : hashkey(data) # 요청 암호화
     }
@@ -263,73 +246,38 @@ def sell(code="005930", qty="1"):
         send_message(f"[매도 실패]{str(res.json())}")
         return False
 
-def StockCrawler():
-    """네이버 금융_국내증시_거래상위_코스피 탭에서 거래량 내림차순 순으로 주식 종목코드 5개를 가져옵니다.
-    \n조건 1. 인버스/레버리지 ETF 제외
-    \n조건 2. 현재가 <= 주문 가능한 현금 잔고 // 5
-    """
-
-    URL = 'https://finance.naver.com/sise/sise_quant.nhn'
-    res = requests.get(URL)
-
-    soup = BeautifulSoup(res.text, 'lxml') # html.parser
-    stocks = soup.select('.type_2 tr')[2:]
-    
-    codes = []
-
-    blance = get_balance() # 추가
-    counts = 10 # 추가
-    
-    for stock in stocks:
-        try:
-            stock_n = stock.select_one('.tltle').text
-            price = stock.select_one('.number').text.replace(',', '')
-            code = stock.select_one('.tltle').attrs['href'][-6:]
-
-            # if (('인버스' not in stock_n) and ('레버리지' not in stock_n)) and (int(price) <= (blance / counts)): # default
-            # if int(price) <= (blance / counts): # added for an improvement on 9/29
-            if int(price) <= 30000: # added for an improvement on 10/7
-                codes.append(code)
-            else:
-                pass
-        except:
-            continue
-
-        if len(codes) == counts:
-            break
-        
-    return list(codes)
-
 # 자동매매 시작
 try:
     ACCESS_TOKEN = get_access_token() # 보안 인증키 발급
     # symbol_list = StockCrawler() # 매수 대상 종목 리스트
-    symbol_list = ['021650', '031310', '046310', '032750', '006920', '001020', '290270', '012620', '203450', '051390']
+    # 성장가치주 Top 20 종목
+    symbol_list = ['021650', '031310', '046310', '032750', '006920', '001020', '290270', '012620', '203450', '051390',
+                   '005670', '184230', '080010', '072130', '019770', '016670', '130500', '263020', '060380', '025880']
     bought_list = [] # 매수 완료된 종목 리스트
     total_cash = get_balance() # 현금 잔고 조회
     stock_dict = get_stock_balance() # 주식 잔고 조회. {"종목 번호": 보수 수량}
     for sym in stock_dict.keys():
         bought_list.append(sym)
-    target_buy_count = 10 # 매수할 종목 수
-    buy_percent = 0.1 # 종목당 매수 금액 비율
+    target_buy_count = 20 # 매수할 종목 수
+    buy_percent = 0.05 # 종목당 매수 금액 비율
     buy_amount = total_cash * buy_percent  # 종목별 주문 금액 계산
     soldout = False
 
     send_message("===국내 주식 자동매매 프로그램을 시작합니다===")
-    send_message(f"성장가치주 종합순위 상위 10개 종목: {symbol_list}")
+    send_message(f"성장가치주 종합순위 상위 20개 종목: {symbol_list}")
 
     while True:
         t_now = datetime.datetime.now()
-        t_start = t_now.replace(hour=13, minute=0, second=0, microsecond=0)
-        t_end = t_now.replace(hour=14, minute=0, second=0, microsecond=0)
-        t_exit = t_now.replace(hour=14, minute=5, second=0,microsecond=0)
+        t_start = t_now.replace(hour=13, minute=00, second=0, microsecond=0)
+        t_end = t_now.replace(hour=15, minute=0, second=0, microsecond=0)
+        t_exit = t_now.replace(hour=15, minute=5, second=0,microsecond=0)
         today = datetime.datetime.today().weekday()
 
         if today == 5 or today == 6:  # 토요일이나 일요일이면 자동 종료
             send_message("주말이므로 프로그램을 종료합니다.")
             break
 
-        if t_start < t_now < t_end :  # PM 1:00 ~ PM 2:00 : 매수. added for an improvement on 9/29
+        if t_start < t_now < t_end :  # PM 1:00 ~ PM 3:00 : 매수
             for sym in symbol_list:
                 if len(bought_list) < target_buy_count:
                     if sym in bought_list:
@@ -342,14 +290,12 @@ try:
                         if buy_qty > 0:
                             send_message(f"{sym} 목표가 달성({target_price} > {current_price}) 매수를 시도합니다.")
                             result = buy(sym, buy_qty)
-                            # if len(symbol_list) < 10: # added for an improvement on 11/2
-                            #     continue
+
                             if result:
                                 soldout = False
                                 bought_list.append(sym)
                                 get_stock_balance()
-                            # elif (result == False) and ('APBK1680' in {str(res.json())}) : # result == False. added for an improvement on 10/7 str(res.json())
-                            #     pass
+
                             else:
                                 continue
 
@@ -359,7 +305,7 @@ try:
                 get_stock_balance()
                 time.sleep(5)
 
-        if t_exit < t_now:  # PM 2:05 : 프로그램 종료
+        if t_exit < t_now:  # PM 3:05 ~ : 프로그램 종료
             send_message("프로그램을 종료합니다.")
             break
 
