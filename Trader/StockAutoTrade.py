@@ -89,7 +89,7 @@ def get_target_price(code="005930"):
     stck_oprc = int(res.json()['output'][0]['stck_oprc']) #오늘 시가
     stck_hgpr = int(res.json()['output'][1]['stck_hgpr']) #전일 고가
     stck_lwpr = int(res.json()['output'][1]['stck_lwpr']) #전일 저가
-    target_price = stck_oprc + (stck_hgpr - stck_lwpr) * 0.25 # 돌파계수 K 0.5
+    target_price = stck_oprc + (stck_hgpr - stck_lwpr) * 0.25
     return target_price
 
 def get_stock_balance():
@@ -214,24 +214,6 @@ def buy(code="005930", qty="1"):
         return True
     else:
         send_message(f"[매수 실패]{str(res.json())}")
-
-        # try: # Ver. 5
-
-            # send_message(type(str(res.json())))
-
-            # symbol_list.remove(sym) # added for an improvement on 10/19. Ver. 1
-            # symbol_list = symbol_list
-
-        # del sym # added for an improvement on 11/2. Ver. 2
-
-        # if {str(res.json())} == {'rt_cd': '7', 'msg_cd': 'APBK1680', 'msg1': '해당종목은 교육이수가 등록/승인된 계좌만 매수주문가능합니다'}: # Ver. 3
-        #     symbol_list.remove(sym)
-
-        # if 'APBK1680' in str(res.json()): # Ver. 4
-        #     symbol_list.remove(sym)
-        
-        # except:
-        #     return False
         return False
 
 def sell(code="005930", qty="1"):
@@ -263,47 +245,9 @@ def sell(code="005930", qty="1"):
         send_message(f"[매도 실패]{str(res.json())}")
         return False
 
-def StockCrawler():
-    """네이버 금융_국내증시_거래상위_코스피 탭에서 거래량 내림차순 순으로 주식 종목코드 5개를 가져옵니다.
-    \n조건 1. 인버스/레버리지 ETF 제외
-    \n조건 2. 현재가 <= 주문 가능한 현금 잔고 // 5
-    """
-
-    URL = 'https://finance.naver.com/sise/sise_quant.nhn'
-    res = requests.get(URL)
-
-    soup = BeautifulSoup(res.text, 'lxml') # html.parser
-    stocks = soup.select('.type_2 tr')[2:]
-    
-    codes = []
-
-    blance = get_balance() # 추가
-    counts = 10 # 추가
-    
-    for stock in stocks:
-        try:
-            stock_n = stock.select_one('.tltle').text
-            price = stock.select_one('.number').text.replace(',', '')
-            code = stock.select_one('.tltle').attrs['href'][-6:]
-
-            # if (('인버스' not in stock_n) and ('레버리지' not in stock_n)) and (int(price) <= (blance / counts)): # default
-            # if int(price) <= (blance / counts): # added for an improvement on 9/29
-            if int(price) <= 30000: # added for an improvement on 10/7
-                codes.append(code)
-            else:
-                pass
-        except:
-            continue
-
-        if len(codes) == counts:
-            break
-        
-    return list(codes)
-
 # 자동매매 시작
 try:
     ACCESS_TOKEN = get_access_token() # 보안 인증키 발급
-    # symbol_list = StockCrawler() # 매수 대상 종목 리스트
     symbol_list = ['021650', '031310', '046310', '032750', '006920', '001020', '290270', '012620', '203450', '051390']
     bought_list = [] # 매수 완료된 종목 리스트
     total_cash = get_balance() # 현금 잔고 조회
@@ -342,14 +286,12 @@ try:
                         if buy_qty > 0:
                             send_message(f"{sym} 목표가 달성({target_price} > {current_price}) 매수를 시도합니다.")
                             result = buy(sym, buy_qty)
-                            # if len(symbol_list) < 10: # added for an improvement on 11/2
-                            #     continue
+
                             if result:
                                 soldout = False
                                 bought_list.append(sym)
                                 get_stock_balance()
-                            # elif (result == False) and ('APBK1680' in {str(res.json())}) : # result == False. added for an improvement on 10/7 str(res.json())
-                            #     pass
+
                             else:
                                 continue
 
