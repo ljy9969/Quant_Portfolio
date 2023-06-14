@@ -68,6 +68,7 @@ def get_current_price(code="005930"):
     "fid_input_iscd":code, # 종목 코드
     }
     res = requests.get(URL, headers=headers, params=params)
+    print(res.json()) # 에러 확인
     return int(res.json()['output']['stck_prpr']) # stck_prpr는 현재가
 
 def get_target_price(code="005930"):
@@ -86,10 +87,11 @@ def get_target_price(code="005930"):
     "fid_period_div_code":"D" # 기간 분류 코드로 일자별 데이터를 의미. D: 일, W: 주, M: 월
     }
     res = requests.get(URL, headers=headers, params=params)
+    print(res.json()) # 에러 확인
     stck_oprc = int(res.json()['output'][0]['stck_oprc']) #오늘 시가
     stck_hgpr = int(res.json()['output'][1]['stck_hgpr']) #전일 고가
     stck_lwpr = int(res.json()['output'][1]['stck_lwpr']) #전일 저가
-    target_price = stck_oprc + (stck_hgpr - stck_lwpr) * 0.25 # 돌파계수 K 0.5
+    target_price = stck_oprc + (stck_hgpr - stck_lwpr) * 0.25
     return target_price
 
 def get_stock_balance():
@@ -117,6 +119,7 @@ def get_stock_balance():
         "CTX_AREA_NK100": "" # 연속 조회 키 100. 공란: 최초 조회 시
     }
     res = requests.get(URL, headers=headers, params=params)
+    print(res.json()) # 에러 확인
     stock_list = res.json()['output1']
     evaluation = res.json()['output2']
     stock_dict = {}
@@ -156,6 +159,7 @@ def get_balance():
         "OVRS_ICLD_YN": "Y" # 해외 포함 여부
     }
     res = requests.get(URL, headers=headers, params=params)
+    print(res.json()) # 에러 확인. 6/14 여기서 에러 발생. 계좌에 맞는 APP_KEY/APP_SECRET가 아님
     cash = res.json()['output']['ord_psbl_cash'] # 주문 가능 현금
     send_message(f"주문 가능 현금 잔고: {cash}원")
     return int(cash)
