@@ -200,7 +200,8 @@ def buy(code="005930", qty="1"):
         "ACNT_PRDT_CD": ACNT_PRDT_CD,
         "PDNO": code,
         # "ORD_DVSN": "01", # 시장가
-        "ORD_DVSN": "16", # 16: FOK최유리 (즉시 체결, 전량 취소)
+        # "ORD_DVSN": "16", # 16: FOK최유리 (즉시 체결, 전량 취소)
+        "ORD_DVSN": "03", # 최유리 지정가. 모의투자에서는 조건부 지정가, IOC, FOK 불가
         "ORD_QTY": str(int(qty)), # 주문 수량
         "ORD_UNPR": "0", # 주문 단가
     }
@@ -230,7 +231,8 @@ def sell(code="005930", qty="1"):
         "ACNT_PRDT_CD": ACNT_PRDT_CD,
         "PDNO": code,
         # "ORD_DVSN": "01", # 시장가
-        "ORD_DVSN": "15", # 15: IOC최유리 (즉시 체결, 잔량 취소)
+        # "ORD_DVSN": "15", # 15: IOC최유리 (즉시 체결, 잔량 취소)
+        "ORD_DVSN": "03", # 최유리 지정가. 모의투자에서는 조건부 지정가, IOC, FOK 불가
         "ORD_QTY": qty, # 주문 수량
         "ORD_UNPR": "0", # 주문 단가
     }
@@ -263,7 +265,7 @@ try:
     for sym in stock_dict.keys():
         bought_list.append(sym)
     target_buy_count = 20 # 매수할 종목 수
-    buy_percent = 0.05 # 종목당 매수 금액 비율
+    buy_percent = 0.01 # 종목당 매수 금액 비율
     buy_amount = total_cash * buy_percent  # 종목별 주문 금액 계산
     soldout = False
 
@@ -272,9 +274,9 @@ try:
 
     while True:
         t_now = datetime.datetime.now()
-        t_start = t_now.replace(hour=13, minute=00, second=0, microsecond=0)
-        t_end = t_now.replace(hour=15, minute=0, second=0, microsecond=0)
-        t_exit = t_now.replace(hour=15, minute=5, second=0,microsecond=0)
+        t_start = t_now.replace(hour=13, minute=0, second=0, microsecond=0)
+        t_end = t_now.replace(hour=14, minute=0, second=0, microsecond=0)
+        t_exit = t_now.replace(hour=14, minute=5, second=0,microsecond=0)
         today = datetime.datetime.today().weekday()
 
         if today == 5 or today == 6:  # 토요일이나 일요일이면 자동 종료
